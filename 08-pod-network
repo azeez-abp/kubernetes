@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set-pod-network(){
+sudo kubectl --kubeconfig=/etc/kubernetes/admin.conf create -f https://docs.projectcalico.org/manifests/calico.yaml
+}
+echo "installing pod Network Calico"
+
+set-pod-network

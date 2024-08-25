@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+install-kubeadm-kubeproxy-kubectl() {
+   
+    # Check if /etc/debian_version exists
+    if [ -f /etc/debian_version ]; then
+        echo "Debian-based distribution detected"
+        # Additional checks or actions for Debian-based systems can be added here
+        sudo apt-get update
+        sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+
+        # Ensure the keyring directory exists
+        sudo mkdir -p -m 755 /etc/apt/keyrings
+
+        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+        echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+        sudo apt-get update
+        sudo apt-get install -y kubelet kubeadm kubectl
+        sudo apt-mark hold kubelet kubeadm kubectl
+
+    # Check if /etc/redhat-release exists
+    elif [ -f /etc/redhat-release ]; then
+        echo "Red Hat-based distribution detected"
+        # Additional checks or actions for Red Hat-based systems can be added here
+        # Set SELinux in permissive mode (effectively disabling it)
+        sudo setenforce 0
+        sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+
+        # This overwrites any existing configuration in /etc/yum.repos.d/kubernetes.repo
+        cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
+        [kubernetes]
+        name=Kubernetes
+        baseurl=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/
+        enabled=1
+        gpgcheck=1
+        gpgkey=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/repodata/repomd.xml.key
+        exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+EOF
+
+        sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+    else
+        # If neither file exists, the distribution couldn't be determined
+        echo "Unknown Linux distribution"
+        exit 1
+    fi 
+}
+
+install-kubeadm-kubeproxy-kubectl
+
+
+

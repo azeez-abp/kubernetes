@@ -1,0 +1,106 @@
+#!/bin/env bash
+
+# Get the process ID (PID) of the unattended-upgrades process
+PR=$(sudo ps aux | grep '[u]nattended-upgr' | awk '{print $2}')
+
+# Check if the PID is greater than 0 (process exists)
+if [[ -n "$PR" ]]; then
+    # Kill the process using SIGKILL (-9)
+    sudo kill -9 "$PR"
+    echo "Process $PR killed."
+else
+    echo "No unattended-upgrades process found."
+fi
+
+
+# check firwall
+firew="$(sudo iptables --version | awk '{print $1" version " $2}')"
+
+if [ ! -z "$firew" ]; then
+    echo "$firew detected"
+else
+    echo "Firewall iptables not detected"
+    exit 1
+fi
+
+master-port() {
+
+    # Allow incoming traffic on port 6443 (API)
+    sudo iptables -A INPUT -p tcp --dport 6443 -j ACCEPT
+
+    # Allow incoming traffic on ports 2379-2380 (ETCD)
+    sudo iptables -A INPUT -p tcp --dport 2379:2380 -j ACCEPT
+
+    # Allow incoming traffic on port 10250 (kubelet API)
+    sudo iptables -A INPUT -p tcp --dport 10250 -j ACCEPT
+
+    # Allow incoming traffic on port 10251 (Scheduler)
+    sudo iptables -A INPUT -p tcp --dport 10251 -j ACCEPT
+
+    # Allow incoming traffic on port 10252 (Controller API)
+    sudo iptables -A INPUT -p tcp --dport 10252 -j ACCEPT
+
+    # Allow incoming traffic on port 10255 (kubectl API)
+    sudo iptables -A INPUT -p tcp --dport 10255 -j ACCEPT
+}
+
+worker-port() {
+    # Allow incoming traffic on port 10255 (kubectl API)
+    sudo iptables -A INPUT -p tcp --dport 10255 -j ACCEPT
+
+    # Allow incoming traffic on port 10255 (Service port)
+    sudo iptables -A INPUT -p tcp --dport 30000:32767 -j ACCEPT 
+}
+
+
+
+check-port(){
+    
+
+read -rp $'Is this your master? Type "yes" to open port\n' IS_MASTER
+
+port=""
+
+if [[ "$IS_MASTER" == "yes" ]]; then
+    port="6443"
+    # Call the master-port function if defined
+    master-port
+else
+    port="10255"
+    # Call the worker-port function if defined
+    worker-port
+fi
+
+# Define the host and port to check
+host=$(hostname -i | awk '{print $1}')
+
+# Check if the port is open
+if nc -zv "$host" "$port" &> /dev/null; then
+    echo "Port $port is open"
+else
+    echo "Port $port is closed"
+    echo "Opening port $port..."
+    # Open the port using netcat
+    nc -l -p "$port" &
+fi
+
+
+
+
+if [ -f /etc/debian_version ]; then
+    sudo ufw disable
+    echo "Debian-based distribution detected, ufw disabled"
+elif [ -f /etc/redhat-release ]; then 
+    sudo systemctl stop firewalld
+    sudo systemctl disable firewalld
+else
+    echo "Invalid OS type"
+fi
+
+
+sudo swapoff -a
+
+}
+
+check-port
+

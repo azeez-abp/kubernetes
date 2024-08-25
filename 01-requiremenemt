@@ -1,0 +1,24 @@
+#!/usr/bin/bash
+
+check-requirement(){
+        # Check if the system has at least 2 GB of RAM
+total_memory=$(free -m | awk '/^Mem:/{print $2}')
+if [ "$total_memory" -ge 2048 ]; then
+    echo "System has at least 2 GB of RAM"
+else
+    echo "Error: System does not meet the minimum RAM requirement of 2 GB"
+    exit 2
+fi
+
+# Check if the system has at least 2 CPUs
+cpu_count=$(nproc)
+if [ "$cpu_count" -ge 2 ]; then
+    echo "System has at least 2 CPUs"
+else
+    echo "Error: System does not meet the minimum CPU requirement of 2 CPUs"
+    exit 2
+fi
+
+}
+check-requirement
+echo "Requirement passed"

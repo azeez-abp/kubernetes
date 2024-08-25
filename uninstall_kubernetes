@@ -1,0 +1,8 @@
+#!/bin/bash
+
+sudo apt-get purge -y kubeadm kubectl kubelet kubernetes-cni
+sudo apt-get autoremove -y
+sudo apt-get remove kubectl
+sudo apt-get remove kubeadm
+sudo apt-get remove kubelet
+sudo apt-get remove kubernetes-cni

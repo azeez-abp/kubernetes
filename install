@@ -1,0 +1,55 @@
+#!/usr/bin/bash
+set -euo pipefail
+
+read -rp $'Run requirement for kubernetes? Type "yes" install\n' IS_MASTER
+
+if [[ "$IS_MASTER" == "yes" ]]; then
+	 "./01-requirement"
+fi
+
+
+read -rp $'Run open port required for kubernetes? Type "yes" install\n' IS_MASTER
+
+if [[ "$IS_MASTER" == "yes" ]]; then
+	"./02-open-port"
+fi
+
+"./03-runc-cri-requirement"
+"./04-runc-cni-containerd-install"
+"./05-install-kube-components"
+"./06-init-kube"
+"./07-set-user"
+"./08-pod-network"
+
+kubeaudit all
+# You need to install a container runtime into 
+#each node in the cluster so that Pods can run there.
+#Kubernetes 1.29 requires that you use a 
+#runtime that conforms with the Container Runtime Interface (CRI).
+
+# Container runtime
+# 1. containerd
+# 2. CRI-O
+# 3. Docker Engine
+# 4. Mirantis Container Runtime
+
+
+#Both the kubelet and the 
+#underlying container runtime need to interface with control groups
+#to enforce resource management for pods and containers 
+#and set resources such as cpu/memory requests and limits.
+# To interface with control groups, the kubelet and the container runtime 
+#need to use a cgroup drive
+
+#To set systemd as the cgroup driver, edit the KubeletConfiguration option of cgroupDriver and set it to systemd. For example:
+
+# apiVersion: kubelet.config.k8s.io/v1beta1
+# kind: KubeletConfiguration
+# ...
+# cgroupDriver: systemd
+
+#install order runc ==> CNI(runtime interface) ==> Container(runtime)
+
+# Install a single control-plane Kubernetes cluster
+# Install a Pod network on the cluster so that your Pods can talk to each other
+#sudo ip route add 192.168.253.0/24 via 192.168.0.139 dev enp0s3 metric 100

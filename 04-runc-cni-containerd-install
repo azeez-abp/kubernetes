@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+setup-containerd(){
+# Download the containerd archive
+wget https://github.com/containerd/containerd/releases/download/v1.7.14/containerd-1.7.14-linux-amd64.tar.gz
+
+# Extract the archive to /usr/local
+sudo tar -C /usr/local -xzvf containerd-1.7.14-linux-amd64.tar.gz
+
+}
+
+
+setup-runc() {
+  # Download the runc binary
+	wget https://github.com/opencontainers/runc/releases/download/v1.1.12/runc.amd64
+
+	# Make the binary executable and move it to /usr/local/bin
+	chmod +x runc.amd64
+	sudo mv runc.amd64 /usr/local/bin/runc
+}
+
+
+setup-container-network-interface() {
+    # Download and install CNI plugins
+    wget https://github.com/containernetworking/plugins/releases/download/v1.4.1/cni-plugins-linux-amd64-v1.4.1.tgz
+    sudo mkdir -p /opt/cni/bin
+    sudo tar -C /opt/cni/bin -xzvf cni-plugins-linux-amd64-v1.4.1.tgz  --strip-components=1 
+}
+
+
+read -rp $'Install containerd? Type "yes" install\n' IS_MASTER
+
+if [[ "$IS_MASTER" == "yes" ]]; then
+	setup-containerd
+fi
+
+
+sleep 3
+
+
+
+read -rp $'Install runc? Type "yes" install\n' IS_MASTER
+
+if [[ "$IS_MASTER" == "yes" ]]; then
+	setup-runc
+fi
+
+sleep 3
+
+
+
+read -rp $'Install CNI? Type "yes" install\n' IS_MASTER
+
+if [[ "$IS_MASTER" == "yes" ]]; then
+	setup-container-network-interface
+fi
+
+#/etc/containerd/config.toml
+
+#To use the systemd cgroup driver in /etc/containerd/config.toml with runc, set
+
+#SystemdCgroup = true

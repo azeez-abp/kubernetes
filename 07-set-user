@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+set-user(){
+    echo "Setting up regular user..."
+        #To start using your cluster, you need to run the following as a regular user:
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+}
+
+
+
+set-for-root-user()
+{
+  #Alternatively, if you are the root user, you can run:
+  export KUBECONFIG=/etc/kubernetes/admin.conf
+}
+
+
+read -rp $'1. Use kubernetes as root\n2. Use kubernetes as regular user\n' IS_MASTER
+
+if [[ "$IS_MASTER" == "1" ]];then
+    set-for-root-user
+   
+elif [[ "$IS_MASTER" == "2" ]];then
+    set-user
+   
+else 
+    echo "Invalid option"
+fi

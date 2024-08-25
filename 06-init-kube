@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+start-kubelet(){
+    sudo systemctl start kubelet 
+    sudo systemctl enable kubelet 
+}
+
+init-kubeadm(){
+
+read -p $'Do you want to reset this master node, type yes to reset it\n' IS_MASTER
+
+if [[ "$IS_MASTER" == "yes" ]];then
+    sudo kubeadm reset
+   
+fi
+
+# Get the IP address of the host
+host_ip=$(hostname -i | awk '{print $1}')
+
+# Check if the IP address is valid
+if [[ -z $host_ip ]]; then
+    echo "Error: Failed to retrieve host IP address."
+    exit 1
+fi
+
+# Initialize the Kubernetes control plane
+sudo kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-address=$host_ip --control-plane-endpoint=$host_ip:6443
+}
+
+
+start-kubelet
+
+read -p $'You need to start kubelet if not running, type yes to statr it\n' IS_MASTER
+
+if [[ "$IS_MASTER" == "yes" ]];then
+   start-kubelet
+   
+fi
+
+sleep 3
+
+read -p $'is this your master, type yes to initialize it\n' IS_MASTER
+
+if [[ "$IS_MASTER" == "yes" ]];then
+    init-kubeadm
+   
+fi
+
