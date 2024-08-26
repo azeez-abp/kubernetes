@@ -30,7 +30,7 @@ sudo kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-addres
 
 start-kubelet
 
-read -p $'You need to start kubelet if not running, type yes to statr it\n' IS_MASTER
+read -p $'You need to start kubelet if not running, type yes to start it\n' IS_MASTER
 
 if [[ "$IS_MASTER" == "yes" ]];then
    start-kubelet
