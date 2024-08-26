@@ -1,6 +1,9 @@
 #!/usr/bin/bash
 set -euo pipefail
 
+script_path=$(readlink -f "$0")
+PATH=${script_path%/*} #remove every after the longest /
+
 read -rp $'Run requirement for kubernetes? Type "yes" install\n' IS_MASTER
 
 if [[ "$IS_MASTER" == "yes" ]]; then
@@ -14,12 +17,12 @@ if [[ "$IS_MASTER" == "yes" ]]; then
 	"./02-open-port"
 fi
 
-"./03-runc-cri-requirement"
-"./04-runc-cni-containerd-install"
-"./05-install-kube-components"
-"./06-init-kube"
-"./07-set-user"
-"./08-pod-network"
+"./${PATH}/03-runc-cri-requirement"
+"./${PATH}/04-runc-cni-containerd-install"
+"./${PATH}/05-install-kube-components"
+"./${PATH}/06-init-kube"
+"./${PATH}/07-set-user"
+"./${PATH}/08-pod-network"
 
 kubeaudit all
 # You need to install a container runtime into 
