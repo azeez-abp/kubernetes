@@ -12,7 +12,7 @@ else
     echo "No unattended-upgrades process found."
 fi
 
-
+                                      
 # check firwall
 firew="$(sudo iptables --version | awk '{print $1" version " $2}')"
 

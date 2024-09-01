@@ -6,3 +6,8 @@ sudo apt-get remove kubectl
 sudo apt-get remove kubeadm
 sudo apt-get remove kubelet
 sudo apt-get remove kubernetes-cni
+sudo rm -rf /etc/kubernetes/
+sudo rm -rf /var/lib/kubelet/
+sudo rm -rf ~/.kube/
+sudo rm -rf /opt/cni/bin/
+sudo rm -rf /etc/cni/net.d/

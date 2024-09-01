@@ -17,7 +17,8 @@ install-kubeadm-kubeproxy-kubectl() {
 
         sudo apt-get update
         #sudo apt-get install -y kubelet kubeadm kubectl
-        sudo apt-get -y install kubelet=1.30.1-1.1 kubeadm=1.30.1-1.1 kubectl=1.30.1-1.1
+        sudo apt-get -y install kubelet kubeadm kubectl --allow-change-held-packages
+        #sudo apt-get -y install kubelet=1.30.1-1.1 kubeadm=1.30.1-1.1 kubectl=1.30.1-1.1
         sudo apt-mark hold kubelet kubeadm kubectl
 
     # Check if /etc/redhat-release exists
@@ -47,7 +48,7 @@ EOF
     fi 
 }
 
-install-kubeadm-kubeproxy-kubectl
+#install-kubeadm-kubeproxy-kubectl
 
 
 
