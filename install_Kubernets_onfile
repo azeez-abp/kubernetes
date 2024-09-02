@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-set -euo pipefail
+#set -euo pipefail
 
 # Update the System:
 sudo apt-get update
@@ -112,16 +112,17 @@ if [[ "$IS_MASTER" == "yes" ]]; then
 fi
 
 # Initialize the Kubernetes control plane
-sudo kubeadm init --pod-network-cidr=10.0.0.0/16 # Adjust CIDR as needed
+
+#sudo kubeadm init --pod-network-cidr=10.0.0.0/16 # Adjust CIDR as needed
 
 # Start and enable kubelet
 sudo systemctl start kubelet
 sudo systemctl enable kubelet
 
 # Set up kubectl for the root user
-mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
+# mkdir -p $HOME/.kube
+# sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+# sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 # Install Cilium
 curl -L https://github.com/cilium/cilium-cli/releases/download/v0.12.0/cilium-linux-amd64-v0.12.0.tar.gz | tar xz
@@ -132,16 +133,62 @@ if ! command -v helm &> /dev/null; then
     curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 fi
 
+
 # Deploy Cilium
 cilium install
+
 
 # Instructions for adding worker nodes
 echo "To add worker nodes, run the kubeadm join command that was displayed during the control plane initialization."
 
 # Check the status of pods in kube-system namespace
-kubectl get pods -n kube-system
+kubectl get node
 
 
 
-kubeadm join 192.168.112.134:6443 --token o4gslq.ddjy0s1c452mhge0 \
-    --discovery-token-ca-cert-hash sha256:784527b8c97cb117d40e741f1fb23da268da2bc2681268c8f4d706430f3ecd67 
+##################################################################
+###                     END OF THE SCRIPT                      ###
+##################################################################
+
+
+
+
+
+
+
+
+
+
+sudo systemctl status kubelet
+sudo systemctl status kube-apiserver
+sudo systemctl status kube-controller-manager
+sudo systemctl status kube-scheduler
+
+
+
+sudo -i
+swapoff -a
+exit
+strace -eopenat kubectl version
+
+
+
+
+sudo kubeadm reset
+
+sudo rm -rf /etc/kubernetes
+sudo rm -rf /var/lib/etcd
+
+sudo kubeadm init --pod-network-cidr=10.0.0.0/16
+kubeadm token create --print-join-command
+
+mkdir -p $HOME/.kube
+sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+sudo systemctl status kubelet
+sudo systemctl restart kubelet
+sudo systemctl enable kubelet
+
+
+kubeadm token create --print-join-command

@@ -1,8 +1,8 @@
 #!/usr/bin/bash
 
-set -euo pipefail
+#set -euo pipefail
 
-# Update the System
+# Update the System:
 sudo apt-get update
 sudo apt-get upgrade -y
 
@@ -25,12 +25,20 @@ else
     exit 1
 fi
 
-# Configure firewall rules for worker nodes
-worker-port() {
-    # Allow incoming traffic on port 10255 (kubectl API)
+# Configure firewall rules for master and worker nodes
+master-port() {
+    # Allow incoming traffic on specific Kubernetes ports
+    sudo iptables -A INPUT -p tcp --dport 6443 -j ACCEPT
+    sudo iptables -A INPUT -p tcp --dport 2379:2380 -j ACCEPT
+    sudo iptables -A INPUT -p tcp --dport 10250 -j ACCEPT
+    sudo iptables -A INPUT -p tcp --dport 10251 -j ACCEPT
+    sudo iptables -A INPUT -p tcp --dport 10252 -j ACCEPT
     sudo iptables -A INPUT -p tcp --dport 10255 -j ACCEPT
+}
 
-    # Allow incoming traffic on port 30000-32767 (Service NodePort range)
+worker-port() {
+    # Allow incoming traffic on specific Kubernetes ports
+    sudo iptables -A INPUT -p tcp --dport 10255 -j ACCEPT
     sudo iptables -A INPUT -p tcp --dport 30000:32767 -j ACCEPT
 }
 
@@ -58,13 +66,17 @@ EOF
 }
 
 setup-cri-requirement
+#master-port
 worker-port
 
 # Install required packages
 sudo apt-get install -y curl apt-transport-https gnupg2 software-properties-common
 
 # Disable Swap
+
 sudo swapoff -a
+sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+
 # Remove or comment out swap entry in /etc/fstab to make the change permanent.
 
 # Set up Kubernetes APT repository and install components
@@ -96,13 +108,43 @@ tar zxvf crictl-$VER-linux-amd64.tar.gz
 sudo mv crictl /usr/local/bin
 sudo crictl config --set runtime-endpoint=unix:///run/containerd/containerd.sock --set image-endpoint=unix:///run/containerd/containerd.sock
 
-# Join the Kubernetes cluster
-read -p 'Enter the kubeadm join command from the master node: ' JOIN_COMMAND
-sudo $JOIN_COMMAND
+# Optional: Reset master node if needed
+# read -p 'Do you want to reset this master node? Type "yes" to reset: ' IS_MASTER
+# if [[ "$IS_MASTER" == "yes" ]]; then
+#     sudo kubeadm reset
+# fi
+
+# # Initialize the Kubernetes control plane
+# sudo kubeadm init --pod-network-cidr=10.0.0.0/16 # Adjust CIDR as needed
 
 # Start and enable kubelet
 sudo systemctl start kubelet
 sudo systemctl enable kubelet
 
-# Verify the node has joined the cluster
-kubectl get nodes
+# Set up kubectl for the root user
+# mkdir -p $HOME/.kube
+# sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+# sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+# Install Cilium
+curl -L https://github.com/cilium/cilium-cli/releases/download/v0.12.0/cilium-linux-amd64-v0.12.0.tar.gz | tar xz
+sudo mv cilium /usr/local/bin/
+
+# Install Helm (if not already installed)
+if ! command -v helm &> /dev/null; then
+    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+fi
+
+# Deploy Cilium
+cilium install
+
+
+# Check the status of pods in kube-system namespace
+
+sudo systemctl restart kubelet
+sudo systemctl enable kubelet
+sudo systemctl status kubelet
+
+sleep 5
+kubectl get 
+
